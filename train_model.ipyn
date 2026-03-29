@@ -13,3 +13,84 @@ import pickle, os
 
 os.makedirs('models', exist_ok=True)
 print("Import สำเร็จ")
+
+
+df = pd.read_csv('datasets/diabetes.csv')
+
+# แก้ค่า 0 ที่เป็นไปไม่ได้
+cols = ['Glucose','BloodPressure','SkinThickness','Insulin','BMI']
+for col in cols:
+    df[col] = df[col].replace(0, np.nan)
+    df[col] = df[col].fillna(df[col].median())
+
+X = df.drop('Outcome', axis=1)
+y = df['Outcome']
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=0.2, random_state=42
+)
+
+# บันทึก scaler
+with open('models/scaler.pkl', 'wb') as f:
+    pickle.dump(scaler, f)
+
+print(" ข้อมูลพร้อม | Train:", X_train.shape, "| Test:", X_test.shape)
+
+rf  = RandomForestClassifier(n_estimators=100, random_state=42)
+svm = SVC(probability=True, random_state=42)
+knn = KNeighborsClassifier(n_neighbors=5)
+
+ensemble = VotingClassifier(
+    estimators=[('rf', rf), ('svm', svm), ('knn', knn)],
+    voting='soft'
+)
+ensemble.fit(X_train, y_train)
+
+acc = accuracy_score(y_test, ensemble.predict(X_test))
+print(f" ML Ensemble Accuracy: {acc*100:.2f}%")
+
+with open('models/ensemble.pkl', 'wb') as f:
+    pickle.dump(ensemble, f)
+rf  = RandomForestClassifier(n_estimators=100, random_state=42)
+svm = SVC(probability=True, random_state=42)
+knn = KNeighborsClassifier(n_neighbors=5)
+
+ensemble = VotingClassifier(
+    estimators=[('rf', rf), ('svm', svm), ('knn', knn)],
+    voting='soft'
+)
+ensemble.fit(X_train, y_train)
+
+acc = accuracy_score(y_test, ensemble.predict(X_test))
+print(f" ML Ensemble Accuracy: {acc*100:.2f}%")
+
+with open('models/ensemble.pkl', 'wb') as f:
+    pickle.dump(ensemble, f)
+
+
+model = keras.Sequential([
+    layers.Input(shape=(X_train.shape[1],)),
+    layers.Dense(64, activation='relu'),
+    layers.Dropout(0.3),
+    layers.Dense(32, activation='relu'),
+    layers.Dropout(0.2),
+    layers.Dense(1, activation='sigmoid')
+])
+
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(X_train, y_train,
+          epochs=50, batch_size=32,
+          validation_split=0.2, verbose=0)
+
+_, acc = model.evaluate(X_test, y_test, verbose=0)
+print(f" Neural Network Accuracy: {acc*100:.2f}%")
+
+model.save('models/nn_model.h5')
+
+
