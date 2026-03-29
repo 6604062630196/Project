@@ -68,7 +68,7 @@ import numpy as np
 st.title("🧪 ทดสอบโมเดล Machine Learning")
 st.markdown("---")
 
-@st.cache_resource
+st.cache_resource
 def load_model():
     with open('models/ensemble.pkl', 'rb') as f:
         model = pickle.load(f)
@@ -114,7 +114,7 @@ from tensorflow import keras
 st.title("🧠 ทดสอบโมเดล Neural Network")
 st.markdown("---")
 
-@st.cache_resource
+st.cache_resource
 def load_model():
     model = keras.models.load_model('models/nn_model.h5')
     with open('models/scaler.pkl', 'rb') as f:
